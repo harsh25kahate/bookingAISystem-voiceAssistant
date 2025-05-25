@@ -1,47 +1,45 @@
-# Voice-Interactive AI Appointment Booking System
+# AI Voice Appointment Booking System
 
-An intelligent voice-based appointment scheduling system for doctor appointments using Python and FastAPI. The system enables natural voice interactions for booking, rescheduling, and managing appointments.
+A modern, voice-enabled appointment booking system for a single doctor, with a beautiful UI, slot-based scheduling, and a user-friendly landing page.
 
 ## Features
+- **Landing Page:** Animated, light-themed intro with logo, app name, description, and a Continue button.
+- **Voice & Text Chat:** Book appointments using natural language, either by voice or text.
+- **Slot-Based Scheduling:** All slots are managed in a SQLite database, shown in 12-hour format (e.g., 03:00 PM).
+- **Popup Notification:** When a booking is confirmed, a green popup appears at the top.
+- **Show My Bookings:** Button to view all bookings in a table (Booking No., Date, Time, Name, Phone, Status).
+- **No Email Required:** All email logic has been removed for simplicity.
+- **Modern UI:** Responsive, clean, and easy to use.
 
-- Real-time Speech-to-Text and Text-to-Speech capabilities
-- Natural language understanding for appointment scheduling
-- Intelligent slot management and conflict resolution
-- Voice-based notifications and confirmations
-- Continuous conversation loop without manual triggers
-- Smart scheduling based on availability and preferences
-
-## Setup Instructions
-
-1. Install Python 3.8 or higher
-2. Install required dependencies:
-   ```bash
+## How to Run
+1. **Install dependencies:**
+   ```sh
    pip install -r requirements.txt
    ```
-3. For Windows users, you might need to install PyAudio separately:
-   ```bash
-   pip install pipwin
-   pipwin install pyaudio
-   ```
-
-## Running the Application
-
-1. Start the FastAPI server:
-   ```bash
+2. **Start the server:**
+   ```sh
    uvicorn main:app --reload
    ```
-2. The application will start on http://localhost:8000
+3. **Open your browser:**
+   - Go to [http://localhost:8000/](http://localhost:8000/) to see the landing page.
+   - Click **Continue** to access the main booking/chat app.
 
 ## Usage
+- **Book an appointment:**
+  - Type or speak: "Book my appointment with Doctor Smith on 25th May at 9:00 AM" or "Book for 25th May morning".
+  - The bot will prompt for any missing info (date, time, name, phone).
+  - When confirmed, you'll see a popup and get a booking number.
+- **View bookings:**
+  - Click the "Show My Bookings" button at the bottom to see all bookings in a table.
 
-1. Launch the application
-2. Allow microphone access when prompted
-3. Start speaking naturally to book appointments
-4. The system will respond via voice and continue listening automatically
+## Customization
+- **Logo:** Place your logo as `logo.jpg` in the `static/` folder.
+- **Landing Page:** Edit `templates/landing.html` for the intro page.
+- **Chat UI:** Edit `templates/index.html` for chat and booking UI.
+- **Database Logic:** Edit `scheduler.py` for slot and booking logic.
 
-## System Requirements
+## Requirements
+See `requirements.txt` for all dependencies.
 
-- Python 3.8+
-- Microphone
-- Speakers or headphones
-- Internet connection for speech recognition 
+---
+**Enjoy your modern, voice-powered appointment booking system!** 
