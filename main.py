@@ -1,6 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import List, Dict, Optional
@@ -15,7 +15,6 @@ import os
 from voice_manager import VoiceManager
 from scheduler import AppointmentScheduler, SlotScheduler
 from ai_core import AdaptiveDataKernel, ModelContextProtocol
-from email_manager import EmailManager
 
 app = FastAPI(title="AI-Powered Voice-Based Appointment Booking System")
 
@@ -40,7 +39,6 @@ templates = Jinja2Templates(directory="templates")
 # Initialize components
 voice_manager = VoiceManager()
 scheduler = AppointmentScheduler()
-email_manager = EmailManager()
 adk = AdaptiveDataKernel()
 mcp = ModelContextProtocol()
 slot_scheduler = SlotScheduler()
@@ -235,6 +233,10 @@ async def process_voice_input(text: str, websocket: WebSocket):
         })
 
 @app.get("/", response_class=HTMLResponse)
+def welcome(request: Request):
+    return templates.TemplateResponse("landing.html", {"request": request})
+
+@app.get("/app", response_class=HTMLResponse)
 async def get(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
@@ -259,18 +261,21 @@ def extract_date(text):
         return datetime.now().strftime('%Y-%m-%d')
 
 def extract_time(text):
-    # Try to extract a time
-    time_match = re.search(r'(\d{1,2})(?::(\d{2}))?\s*(am|pm)?', text)
+    # Try to extract a time and return in 12-hour format with AM/PM
+    time_match = re.search(r'(\d{1,2})(?::(\d{2}))?\s*(am|pm)?', text, re.IGNORECASE)
     if time_match:
         hour = int(time_match.group(1))
         minute = int(time_match.group(2)) if time_match.group(2) else 0
         period = time_match.group(3)
+        if period:
+            period = period.lower()
         if period == 'pm' and hour < 12:
             hour += 12
         elif period == 'am' and hour == 12:
             hour = 0
-        if hour < 24:
-            return f"{hour:02d}:{minute:02d}"
+        # Always return 12-hour format with AM/PM
+        t12 = datetime.strptime(f"{hour:02d}:{minute:02d}", "%H:%M").strftime("%I:%M %p")
+        return t12
     return None
 
 @app.websocket("/ws")
@@ -341,11 +346,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     slots = slot_scheduler.get_slots_for_day(date_str)
                     slot = None
                     if time_str:
+                        # time_str is already in 12-hour format
                         slot = next((s for s in slots if s[2] == time_str), None)
                         if slot and slot[3] == "Available":
                             context["pending_slot"] = {"date": date_str, "time": time_str}
                             if not patient_name or not patient_contact:
-                                response = "Please provide your name and 10-digit phone number to confirm the booking."
+                                response = f"Please provide your name and 10-digit phone number to confirm the booking for {time_str}."
                             else:
                                 booking_number = slot_scheduler.book_slot(date_str, time_str, patient_name, patient_contact)
                                 response = f"Your appointment is confirmed! Booking Number: {booking_number}. Thank you for visiting."
@@ -416,6 +422,26 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
         logger.info("Client disconnected")
+
+@app.get("/bookings")
+def get_bookings():
+    # Return all slots with a booking number (i.e., booked slots)
+    bookings = []
+    import sqlite3
+    conn = sqlite3.connect("appointments.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT booking_number, date, time, patient_name, patient_contact, status FROM slots WHERE booking_number IS NOT NULL ORDER BY date, time")
+    for row in cursor.fetchall():
+        bookings.append({
+            "booking_number": row[0],
+            "date": row[1],
+            "time": row[2],
+            "name": row[3],
+            "phone": row[4],
+            "status": row[5]
+        })
+    conn.close()
+    return JSONResponse(content=bookings)
 
 if __name__ == "__main__":
     import uvicorn

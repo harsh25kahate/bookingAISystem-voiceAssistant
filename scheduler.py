@@ -362,6 +362,17 @@ if __name__ == "__main__":
     scheduler.book_slot('2025-05-25', '14:30', 'Charlie', '3456789012')
     scheduler.book_slot('2025-05-25', '17:00', 'Diana', '4567890123')
     scheduler.book_slot('2025-05-25', '18:30', 'Eve', '5678901234')
+    # Convert all slot times to 12-hour format with AM/PM
+    conn = sqlite3.connect('appointments.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT rowid, time FROM slots")
+    updates = []
+    for rowid, time24 in cursor.fetchall():
+        t12 = datetime.strptime(time24, '%H:%M').strftime('%I:%M %p')
+        updates.append((t12, rowid))
+    cursor.executemany("UPDATE slots SET time=? WHERE rowid=?", updates)
+    conn.commit()
+    conn.close()
     # Print all slots for the day
     for slot in scheduler.get_slots_for_day('2025-05-25'):
         print(slot) 
