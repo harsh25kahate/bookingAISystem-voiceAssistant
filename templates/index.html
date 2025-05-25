@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Voice Appointment Booking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .header img {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+        }
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        .user-message {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+        .assistant-message {
+            background: #e9ecef;
+            color: #212529;
+        }
+        .listening {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .text-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .send-button {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .send-button:hover {
+            background: #218838;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+        }
+        .mic-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: #007bff;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+        .mic-button:hover {
+            background: #0056b3;
+        }
+        .mic-button i {
+            font-size: 24px;
+        }
+        .edit-message {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://via.placeholder.com/50/3498db/ffffff?text=AI" alt="AI Assistant">
+            <h1>AI-Powered Voice Appointment Booking</h1>
+        </div>
+        
+        <div id="listeningIndicator" class="listening" style="display: none;">
+            Listening...
+        </div>
+        
+        <div class="chat-container" id="chatContainer">
+            <!-- Messages will be added here -->
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="textInput" class="text-input" placeholder="Type your message or edit voice input...">
+            <button class="send-button" id="sendButton">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        
+        <div class="controls">
+            <button class="mic-button" id="micButton">
+                <i class="fas fa-microphone"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let recognition;
+        let synth = window.speechSynthesis;
+        let lastUserMessage = null;
+        
+        // Initialize WebSocket connection
+        function connectWebSocket() {
+            ws = new WebSocket(`ws://${window.location.host}/ws`);
+            
+            ws.onmessage = function(event) {
+                const response = JSON.parse(event.data);
+                if (response.type === 'response') {
+                    addMessage(response.text, 'assistant');
+                    speakResponse(response.text);
+                }
+            };
+            
+            ws.onclose = function() {
+                setTimeout(connectWebSocket, 1000);
+            };
+        }
+        
+        // Initialize speech recognition
+        function initializeSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                
+                recognition.onstart = function() {
+                    document.getElementById('listeningIndicator').style.display = 'block';
+                    document.getElementById('micButton').style.backgroundColor = '#dc3545';
+                };
+                
+                recognition.onend = function() {
+                    document.getElementById('listeningIndicator').style.display = 'none';
+                    document.getElementById('micButton').style.backgroundColor = '#007bff';
+                };
+                
+                recognition.onresult = function(event) {
+                    const text = event.results[0][0].transcript;
+                    document.getElementById('textInput').value = text;
+                    lastUserMessage = text;
+                    addMessage(text, 'user', true);
+                    sendMessage(text);
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    document.getElementById('listeningIndicator').style.display = 'none';
+                    document.getElementById('micButton').style.backgroundColor = '#007bff';
+                };
+            } else {
+                console.error('Speech recognition not supported');
+                alert('Speech recognition is not supported in this browser. Please use Chrome.');
+            }
+        }
+        
+        // Add message to chat container
+        function addMessage(text, sender, isEditable = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            if (isEditable) {
+                const editLink = document.createElement('span');
+                editLink.className = 'edit-message';
+                editLink.textContent = 'Edit';
+                editLink.onclick = function() {
+                    document.getElementById('textInput').value = text;
+                    document.getElementById('textInput').focus();
+                };
+                messageDiv.textContent = text;
+                messageDiv.appendChild(editLink);
+            } else {
+                messageDiv.textContent = text;
+            }
+            
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Send message to server
+        function sendMessage(text) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'user_input',
+                    text: text
+                }));
+            }
+        }
+        
+        // Speak response using speech synthesis
+        function speakResponse(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            synth.speak(utterance);
+        }
+        
+        // Initialize everything when page loads
+        window.onload = function() {
+            connectWebSocket();
+            initializeSpeechRecognition();
+            
+            // Handle microphone button click
+            document.getElementById('micButton').onclick = function() {
+                if (recognition) {
+                    recognition.start();
+                }
+            };
+            
+            // Handle send button click
+            document.getElementById('sendButton').onclick = function() {
+                const text = document.getElementById('textInput').value.trim();
+                if (text) {
+                    addMessage(text, 'user', true);
+                    sendMessage(text);
+                    document.getElementById('textInput').value = '';
+                }
+            };
+            
+            // Handle enter key in text input
+            document.getElementById('textInput').onkeypress = function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('sendButton').click();
+                }
+            };
+        };
+    </script>
+</body>
+</html> 
