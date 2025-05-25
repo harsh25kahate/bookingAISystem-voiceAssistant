@@ -15,7 +15,6 @@ import os
 from voice_manager import VoiceManager
 from scheduler import AppointmentScheduler, SlotScheduler
 from ai_core import AdaptiveDataKernel, ModelContextProtocol
-from email_manager import EmailManager
 
 app = FastAPI(title="AI-Powered Voice-Based Appointment Booking System")
 
@@ -40,7 +39,6 @@ templates = Jinja2Templates(directory="templates")
 # Initialize components
 voice_manager = VoiceManager()
 scheduler = AppointmentScheduler()
-email_manager = EmailManager()
 adk = AdaptiveDataKernel()
 mcp = ModelContextProtocol()
 slot_scheduler = SlotScheduler()

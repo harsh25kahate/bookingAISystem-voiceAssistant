@@ -115,14 +115,35 @@
             margin-left: 10px;
             font-size: 12px;
         }
+        .toast {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
+            color: white;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-size: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 9999;
+            opacity: 0.95;
+            animation: fadeInOut 3s;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            10% { opacity: 0.95; }
+            90% { opacity: 0.95; }
+            100% { opacity: 0; }
+        }
     </style>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://via.placeholder.com/50/3498db/ffffff?text=AI" alt="AI Assistant">
-            <h1>AI-Powered Voice Appointment Booking</h1>
+            <img src="/static/logo.jpg" alt="AI Assistant" style="width:80px;height:80px;border-radius:50px;object-fit:cover;">
+            <h1>AI-Agent Voice Appointment Booking</h1>
         </div>
         
         <div id="listeningIndicator" class="listening" style="display: none;">
@@ -147,6 +168,8 @@
         </div>
     </div>
 
+    <div id="toast" class="toast" style="display:none;">Your slot is booked!</div>
+
     <script>
         let ws;
         let recognition;
@@ -162,6 +185,10 @@
                 if (response.type === 'response') {
                     addMessage(response.text, 'assistant');
                     speakResponse(response.text);
+                    // Show toast if booking is confirmed
+                    if (response.text.toLowerCase().includes('confirmed') && response.text.toLowerCase().includes('booking number')) {
+                        showToast('Your slot is booked!');
+                    }
                 }
             };
             
@@ -246,6 +273,17 @@
             utterance.rate = 1;
             utterance.pitch = 1;
             synth.speak(utterance);
+        }
+        
+        // Show toast popup
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            toast.classList.remove('hide');
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
         }
         
         // Initialize everything when page loads
