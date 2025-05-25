@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Appointment Booking - Welcome</title>
+    <style>
+        body {
+            background: #fff;
+            color: #222;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+        }
+        .logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            animation: float 2.5s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-18px); }
+            100% { transform: translateY(0); }
+        }
+        .app-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+        .desc {
+            font-size: 1.15rem;
+            color: #555;
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 400px;
+        }
+        .continue-btn {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 18px 48px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: background 0.2s, transform 0.2s;
+            margin-top: 30px;
+        }
+        .continue-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px) scale(1.04);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/static/logo.jpg" alt="App Logo" class="logo">
+        <div class="app-title">AI Voice Appointment Booking</div>
+        <div class="desc">Book your doctor's appointment easily using voice or text. Fast, smart, and secure scheduling for everyone.</div>
+        <button class="continue-btn" onclick="window.location.href='/app'">Continue</button>
+    </div>
+</body>
+</html> 
